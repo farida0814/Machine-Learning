@@ -1,0 +1,58 @@
+import pandas as pd
+
+# Load the training examples from CSV
+data = pd.read_csv('training_data.csv')
+
+# Initialize G and S
+# For G, we use a list of dictionaries to represent the hypothesis space
+# For S, we use a specific hypothesis (all attributes as '?')
+G = [{'Shape': '?', 'Size': '?', 'Color': '?', 'Surface': '?', 'Thickness': '?'}]
+S = [{'Shape': 'None', 'Size': 'None', 'Color': 'None', 'Surface': 'None', 'Thickness': 'None'}]
+
+# Process each training example
+for index, row in data.iterrows():
+    target = row['Target Concept']
+    attributes = row.drop('Target Concept').to_dict()
+
+    if target == '+':  # Positive example
+        # Remove from G any hypothesis that is inconsistent with attributes
+        G = [g for g in G if all(g[attr] == '?' or g[attr] == attributes[attr] for attr in g)]
+
+        # For each hypothesis in S that is not consistent with attributes, generalize it
+S_copy = S.copy()  # Copy S because we'll modify it in the loop
+        for s in S_copy:
+            if any(s[attr] != '?' and s[attr] != attributes[attr] for attr in s):
+old_s = s.copy()
+                for attr in s:
+                    if s[attr] == 'None':
+                        s[attr] = attributes[attr]
+elif s[attr] != '?' and s[attr] != attributes[attr]:
+                        s[attr] = '?'
+                if s not in G and any(all(s[attr] == '?' or (old_s[attr] == '?' and g[attr] == attributes[attr]) or (old_s[attr] != '?' and s[attr] == old_s[attr]) for attr in s) for g in G):
+G.append(s)
+            else:
+S.remove(s)
+
+elif target == '-':  # Negative example
+        # Remove from S any hypothesis that is inconsistent with attributes
+        S = [s for s in S if any(s[attr] == '?' or s[attr] == attributes[attr] for attr in s)]
+
+        # For each hypothesis in G that is not consistent with attributes, specialize it
+G_copy = G.copy()  # Copy G because we'll modify it in the loop
+        for g in G_copy:
+            if any(g[attr] != '?' and g[attr] != attributes[attr] for attr in g):
+old_g = g.copy()
+                for attr in g:
+                    if g[attr] == '?':
+                        g[attr] = attributes[attr]
+elif g[attr] != attributes[attr]:
+                        g[attr] = '?'
+                if g not in S and any(all(s[attr] == '?' or (g[attr] == attributes[attr]) or (g[attr] == '?' and s[attr] == attributes[attr]) for attr in g) for s in S):
+S.append(g)
+            else:
+G.remove(g)
+
+# Output the final version of G
+print("Final version of G:")
+for hypothesis in G:
+    print(hypothesis)
